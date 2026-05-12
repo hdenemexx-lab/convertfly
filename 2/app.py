@@ -36,7 +36,10 @@ app.config["SECRET_KEY"] = "geliştirme-için-değiştirin"
 app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
 
 # MySQL bağlantı yapılandırması
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:rmzn@localhost/donusum"
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+    'MYSQL_URL', 
+    'mysql+pymysql://kullanici:sifre@localhost/veritabani_adi'
+)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # VirusTotal API Anahtarı
