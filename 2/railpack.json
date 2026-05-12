@@ -1,7 +1,3 @@
 {
-    "build": {
-        "aptPackages": [
-            "libcairo2-dev"
-        ]
-    }
+  "buildAptPackages": ["libcairo2-dev"]
 }
