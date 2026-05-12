@@ -1,0 +1,590 @@
+{% extends "base.html" %}
+{% block sayfa_baslik %}Dosya Paylaşımı{% endblock %}
+
+{% block icerik %}
+<style>
+:root {
+    --primary: var(--accent);
+    --text-soft: var(--muted);
+}
+
+/* ── Layout ── */
+.sp-wrap {
+    max-width: 760px;
+    margin: 2rem auto;
+    padding: 0 1rem 4rem;
+}
+
+.sp-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) + 4px);
+    box-shadow: 0 8px 32px rgba(0,0,0,.07);
+    overflow: hidden;
+}
+
+/* ── Header ── */
+.sp-header {
+    background: linear-gradient(135deg, var(--accent) 0%, #f97316 100%);
+    padding: 2rem 2.5rem;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+.sp-header::before {
+    content: '';
+    position: absolute;
+    right: -40px; top: -40px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    pointer-events: none;
+}
+.sp-header h1 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin: 0 0 .35rem;
+}
+.sp-header p {
+    margin: 0;
+    opacity: .85;
+    font-size: .95rem;
+}
+
+/* ── Body ── */
+.sp-body {
+    padding: 2rem 2.5rem;
+    display: none;
+}
+.sp-body.active { display: block; }
+
+/* ── Drop Zone ── */
+.sp-drop {
+    display: block;
+    border: 2px dashed var(--accent);
+    opacity: 0.7;
+    border-radius: 12px;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s, opacity .2s;
+    background: var(--input-bg);
+    margin-bottom: 1.5rem;
+}
+.sp-drop:hover, .sp-drop.over {
+    opacity: 1;
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+.sp-drop-icon { font-size: 3rem; margin-bottom: .6rem; display: block; }
+.sp-drop-title { font-weight: 700; font-size: 1.05rem; color: var(--text); }
+.sp-drop-hint { font-size: .85rem; color: var(--muted); margin-top: .3rem; }
+.sp-file-badge {
+    display: inline-flex; align-items: center; gap: .4rem;
+    background: rgba(16,185,129,.12); color: #059669;
+    border-radius: 20px; padding: .35rem .8rem;
+    font-weight: 700; font-size: .9rem; margin-top: .75rem;
+}
+
+/* ── Fields ── */
+.sp-field { margin-bottom: 1.4rem; }
+.sp-label {
+    display: block;
+    font-weight: 600;
+    font-size: .9rem;
+    color: var(--text);
+    margin-bottom: .45rem;
+}
+.sp-label span {
+    font-weight: 400;
+    color: var(--muted);
+    font-size: .82rem;
+}
+.sp-input {
+    width: 100%;
+    padding: .75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--input-bg);
+    color: var(--text);
+    font-family: inherit;
+    font-size: .95rem;
+    transition: border-color .2s;
+    box-sizing: border-box;
+}
+.sp-input:focus { outline: none; border-color: var(--accent); }
+textarea.sp-input { min-height: 90px; resize: vertical; }
+
+/* ── Saklama Süresi ── */
+.sp-duration-grid {
+    display: flex; flex-wrap: wrap; gap: .5rem;
+}
+.sp-dur-btn {
+    flex: 1; min-width: 70px;
+    padding: .6rem .4rem;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all .15s;
+    position: relative;
+}
+.sp-dur-btn:hover { border-color: var(--accent); color: var(--accent); }
+.sp-dur-btn.selected { border-color: var(--accent); background: var(--accent); color: #fff; }
+.sp-dur-btn.locked {
+    opacity: .45;
+    cursor: not-allowed;
+    background: var(--input-bg);
+}
+.sp-dur-btn.locked::after {
+    content: '🔒';
+    font-size: .7rem;
+    position: absolute;
+    top: 2px; right: 4px;
+}
+
+/* ── Gönderim Tipi ── */
+.sp-toggle {
+    display: flex; gap: .4rem;
+    background: var(--input-bg);
+    padding: .35rem;
+    border-radius: 10px;
+    margin-bottom: 1.4rem;
+}
+.sp-toggle-btn {
+    flex: 1; text-align: center; padding: .7rem;
+    border-radius: 8px; cursor: pointer;
+    font-weight: 600; font-size: .9rem;
+    border: none; background: transparent;
+    color: var(--muted); transition: all .25s;
+}
+.sp-toggle-btn.active {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 4px 10px var(--accent-soft);
+}
+
+/* ── Şifre ── */
+.sp-check-row {
+    display: flex; align-items: center; gap: .6rem;
+    margin-bottom: 1rem;
+}
+.sp-check-row input[type=checkbox] { width: 17px; height: 17px; cursor: pointer; accent-color: var(--accent); }
+.sp-password-wrap {
+    position: relative; display: none;
+}
+.sp-password-wrap.visible { display: block; }
+.sp-eye {
+    position: absolute; right: .9rem; top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer; color: var(--muted);
+    background: none; border: none; padding: 0;
+    display: flex; align-items: center;
+}
+.sp-eye:hover { color: var(--text); }
+
+/* ── Submit ── */
+.sp-submit {
+    display: block;
+    width: 100%; padding: 1.1rem;
+    background: linear-gradient(135deg, var(--accent) 0%, #f97316 100%);
+    color: #fff; border: none; border-radius: 10px;
+    font-size: 1.05rem; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+    transition: filter .2s, transform .15s;
+    box-shadow: 0 4px 16px var(--accent-soft);
+    letter-spacing: .3px;
+}
+.sp-submit:hover { filter: brightness(1.07); }
+.sp-submit:active { transform: translateY(1px); }
+.sp-submit:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+
+/* ── Progress ── */
+.sp-progress { display: none; padding: 2rem 2.5rem; }
+.sp-pb-track {
+    height: 8px; border-radius: 99px;
+    background: var(--input-bg);
+    overflow: hidden; margin: 1.2rem 0 .5rem;
+}
+.sp-pb-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--accent), #f97316);
+    border-radius: 99px;
+    transition: width .15s linear;
+}
+.sp-pb-label {
+    font-size: .88rem; color: var(--muted); font-weight: 600;
+}
+.sp-upload-icon {
+    font-size: 2.5rem; text-align: center; margin-bottom: .75rem;
+    animation: sp-pulse 1.2s ease-in-out infinite;
+}
+@keyframes sp-pulse {
+    0%,100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.08); opacity: .75; }
+}
+
+/* ── Success ── */
+.sp-success {
+    display: none; text-align: center;
+    padding: 2.5rem 2.5rem;
+    animation: sp-scalein .4s cubic-bezier(.175,.885,.32,1.275);
+}
+@keyframes sp-scalein {
+    from { opacity:0; transform:scale(.9); }
+    to   { opacity:1; transform:scale(1); }
+}
+.sp-success-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+.sp-link-box {
+    background: var(--input-bg);
+    border: 1.5px dashed var(--accent);
+    border-radius: 10px; padding: 1.2rem;
+    margin: 1.2rem 0;
+    word-break: break-all;
+}
+.sp-link-box a { color: var(--accent); font-weight: 700; font-size: 1rem; }
+.sp-copy-btn {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .55rem 1.2rem; border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: transparent; color: var(--text);
+    font-family: inherit; font-weight: 600; font-size: .88rem;
+    cursor: pointer; transition: all .2s;
+}
+.sp-copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+.sp-restart-btn {
+    width: 100%; padding: 1rem;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 10px; color: var(--text);
+    font-family: inherit; font-weight: 700; font-size: 1rem;
+    cursor: pointer; margin-top: .75rem;
+    transition: border-color .2s, background .2s;
+}
+.sp-restart-btn:hover { border-color: var(--accent); background: var(--input-bg); }
+
+/* ── Tabs (link/email) ── */
+.sp-email-field { display: none; }
+.sp-email-field.visible { display: block; }
+</style>
+
+<div class="sp-wrap">
+    <div class="sp-card">
+
+        <!-- Header -->
+        <div class="sp-header">
+            <h1>📤 Dosya Paylaş</h1>
+            <p>Dosyalarınızı güvenle paylaşın — link veya e-posta ile iletin.</p>
+        </div>
+
+        <!-- FORM STATE -->
+        <div class="sp-body active" id="sp-form">
+            <form id="share-form" action="{{ url_for('dosya_paylas') }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="is_ajax" value="1">
+                <input type="hidden" name="gonderim_tipi" id="gonderim-tipi" value="link">
+                <input type="hidden" name="saklama_gun" id="saklama-gun-val" value="7">
+
+                <!-- 1. DOSYA YÜKLEME -->
+                <div class="sp-field">
+                    <label class="sp-drop" id="sp-drop" for="dosya-input">
+                        <span class="sp-drop-icon">📁</span>
+                        <div class="sp-drop-title">Dosyaları Bırak veya Tıkla</div>
+                        <div class="sp-drop-hint">Birden fazla dosya seçebilirsiniz · Maks. 100 MB</div>
+                        <div id="sp-file-info"></div>
+                        <input type="file" name="dosyalar" id="dosya-input" multiple required style="display:none">
+                    </label>
+                </div>
+
+                <!-- 2. BAŞLIK -->
+                <div class="sp-field">
+                    <label class="sp-label" for="sp-baslik">
+                        Başlık <span>(isteğe bağlı — şifreli paylaşımlarda görünür)</span>
+                    </label>
+                    <input type="text" name="baslik" id="sp-baslik" class="sp-input"
+                           placeholder="örn: Proje Raporları" maxlength="120">
+                </div>
+
+                <!-- 3. MESAJ -->
+                <div class="sp-field">
+                    <label class="sp-label" for="sp-mesaj">
+                        Not / Mesaj <span>(isteğe bağlı — alıcıya iletilir)</span>
+                    </label>
+                    <textarea name="mesaj" id="sp-mesaj" class="sp-input"
+                              placeholder="Dosyalarla birlikte gönderilecek bir not yazın..."></textarea>
+                </div>
+
+                <!-- 4. SAKLAMA SÜRESİ -->
+                <div class="sp-field">
+                    <label class="sp-label">
+                        Saklama Süresi
+                        <span>· 3 günü aşanlar Premium/Pro gerektirir</span>
+                    </label>
+                    <div class="sp-duration-grid" id="sp-dur-grid">
+                        {% set plan_sirasi = {'normal': 0, 'premium': 1, 'pro': 2} %}
+                        {% for gun, label, gereken in [
+                            (1, '1 Gün', 'normal'),
+                            (3, '3 Gün', 'normal'),
+                            (7, '7 Gün', 'premium'),
+                            (30, '30 Gün', 'premium'),
+                            (60, '60 Gün', 'pro'),
+                            (0, '♾️ Sonsuz', 'pro')
+                        ] %}
+                        {% if not current_user.is_authenticated %}
+                            {% set kilitli = gun not in [1, 3] %}
+                            {% set secili = (gun == 1) %}
+                        {% else %}
+                            {% set kilitli = plan_sirasi.get(kullanici_plan, 0) < plan_sirasi.get(gereken, 0) %}
+                            {% set secili = (gun == 7) %}
+                        {% endif %}
+                        <button type="button"
+                                class="sp-dur-btn {{ 'locked' if kilitli else '' }} {{ 'selected' if secili else '' }}"
+                                data-gun="{{ gun }}"
+                                {% if kilitli %}disabled title="{{ gereken|capitalize }} plan gerekli — Giriş yapın"{% endif %}
+                                onclick="secSure(this)">
+                            {{ label }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- 5. GÖNDERİM TİPİ -->
+                <div class="sp-toggle">
+                    <button type="button" class="sp-toggle-btn active" id="btn-link" onclick="setTip('link')">🔗 Sadece Link</button>
+                    <button type="button" class="sp-toggle-btn" id="btn-email" onclick="setTip('email')">✉️ E-posta Gönder</button>
+                </div>
+
+                <div class="sp-field sp-email-field" id="alan-email">
+                    <label class="sp-label" for="sp-email">Alıcı E-posta Adresi</label>
+                    <input type="email" name="alici_email" id="sp-email" class="sp-input"
+                           placeholder="ornek@sirket.com">
+                </div>
+
+                <!-- 6. ŞİFRE KORUMA -->
+                <div class="sp-field">
+                    <div class="sp-check-row">
+                        <input type="checkbox" id="sp-sifre-check" onchange="toggleSifre(this)">
+                        <label for="sp-sifre-check" class="sp-label" style="margin:0; cursor:pointer;">
+                            🔒 Şifre Koruması Ekle
+                        </label>
+                    </div>
+                    <div class="sp-password-wrap" id="sp-pass-wrap">
+                        <input type="password" name="indirme_sifresi" id="sp-sifre" class="sp-input"
+                               placeholder="Dosyaları koruyacak şifreyi belirleyin..."
+                               style="padding-right: 2.8rem;">
+                        <button type="button" class="sp-eye" onclick="toggleGoz()" id="sp-eye-btn"
+                                title="Şifreyi göster/gizle">
+                            <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- GÖNDER -->
+                <button type="submit" class="sp-submit" id="sp-submit-btn">
+                    🚀 Paylaşım Bağlantısı Oluştur
+                </button>
+            </form>
+        </div>
+
+        <!-- PROGRESS STATE -->
+        <div class="sp-progress" id="sp-progress">
+            <div class="sp-upload-icon">⬆️</div>
+            <div style="font-weight:700; font-size:1.1rem; text-align:center; color:var(--text); margin-bottom:.25rem;">
+                Dosyalar Yükleniyor...
+            </div>
+            <div class="sp-pb-track">
+                <div class="sp-pb-fill" id="sp-pb-fill"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="sp-pb-label" id="sp-pb-label">%0</span>
+                <span class="sp-pb-label" id="sp-pb-status">Hazırlanıyor...</span>
+            </div>
+        </div>
+
+        <!-- SUCCESS STATE -->
+        <div class="sp-success" id="sp-success">
+            <div class="sp-success-icon">🎉</div>
+            <h2 style="color:var(--text); font-size:1.7rem; margin:0 0 .4rem;">İşlem Tamamlandı!</h2>
+            <p style="color:var(--muted);" id="sp-success-desc">Dosyanız başarıyla paylaşıma hazır.</p>
+
+            <div class="sp-link-box">
+                <p style="margin:0 0 .5rem; font-size:.8rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em;" id="sp-link-label">Paylaşım Bağlantısı</p>
+                <a href="#" id="sp-link-href" target="_blank"></a>
+            </div>
+
+            <div style="display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap;">
+                <button class="sp-copy-btn" onclick="spKopyala()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    <span id="sp-copy-text">Linki Kopyala</span>
+                </button>
+            </div>
+
+            <button class="sp-restart-btn" onclick="spYenidenBasla()">
+                + Yeni Paylaşım Yap
+            </button>
+        </div>
+
+    </div><!-- /sp-card -->
+</div><!-- /sp-wrap -->
+
+<script>
+// Saklama süresi seçimi
+function secSure(btn) {
+    document.querySelectorAll('.sp-dur-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('saklama-gun-val').value = btn.dataset.gun;
+}
+
+// Gönderim tipi toggle
+function setTip(tip) {
+    document.getElementById('gonderim-tipi').value = tip;
+    var btnLink  = document.getElementById('btn-link');
+    var btnEmail = document.getElementById('btn-email');
+    var alanEmail = document.getElementById('alan-email');
+    var submitBtn = document.getElementById('sp-submit-btn');
+    if (tip === 'link') {
+        btnLink.classList.add('active');
+        btnEmail.classList.remove('active');
+        alanEmail.classList.remove('visible');
+        submitBtn.textContent = '🚀 Paylaşım Bağlantısı Oluştur';
+    } else {
+        btnEmail.classList.add('active');
+        btnLink.classList.remove('active');
+        alanEmail.classList.add('visible');
+        submitBtn.textContent = '✉️ Dosyaları E-posta ile Gönder';
+    }
+}
+
+// Şifre checkbox
+function toggleSifre(cb) {
+    var wrap = document.getElementById('sp-pass-wrap');
+    wrap.classList.toggle('visible', cb.checked);
+    if (!cb.checked) {
+        document.getElementById('sp-sifre').value = '';
+    }
+}
+
+// Göz ikonu
+var gozAcik = false;
+function toggleGoz() {
+    gozAcik = !gozAcik;
+    var inp = document.getElementById('sp-sifre');
+    inp.type = gozAcik ? 'text' : 'password';
+    document.getElementById('eye-icon').innerHTML = gozAcik
+        ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+        : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+}
+
+// Drag & drop
+var drop = document.getElementById('sp-drop');
+['dragenter','dragover'].forEach(function(ev) {
+    drop.addEventListener(ev, function(e) { e.preventDefault(); drop.classList.add('over'); });
+});
+['dragleave','drop'].forEach(function(ev) {
+    drop.addEventListener(ev, function(e) { e.preventDefault(); drop.classList.remove('over'); });
+});
+drop.addEventListener('drop', function(e) {
+    document.getElementById('dosya-input').files = e.dataTransfer.files;
+    gosterDosyaBilgi(e.dataTransfer.files);
+});
+
+document.getElementById('dosya-input').addEventListener('change', function() {
+    gosterDosyaBilgi(this.files);
+});
+
+function gosterDosyaBilgi(files) {
+    var info = document.getElementById('sp-file-info');
+    if (!files || !files.length) { info.innerHTML = ''; return; }
+    info.innerHTML = '<div class="sp-file-badge">✅ ' + files.length + ' dosya seçildi</div>';
+}
+
+// Form submit
+document.getElementById('share-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var files = document.getElementById('dosya-input').files;
+    if (!files || !files.length) { alert('Lütfen en az bir dosya seçin.'); return; }
+
+    document.getElementById('sp-form').style.display = 'none';
+    document.getElementById('sp-progress').style.display = 'block';
+
+    var fill   = document.getElementById('sp-pb-fill');
+    var label  = document.getElementById('sp-pb-label');
+    var status = document.getElementById('sp-pb-status');
+    var fd     = new FormData(this);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', this.action, true);
+    xhr.responseType = 'json';
+
+    xhr.upload.onprogress = function(ev) {
+        if (ev.lengthComputable) {
+            var pct = Math.round((ev.loaded / ev.total) * 100);
+            fill.style.width = pct + '%';
+            label.textContent = '%' + pct;
+            status.textContent = pct < 100 ? 'Yükleniyor...' : 'İşleniyor...';
+        }
+    };
+
+    xhr.onload = function() {
+        document.getElementById('sp-progress').style.display = 'none';
+        if (xhr.status === 200 && xhr.response && xhr.response.success) {
+            var r = xhr.response;
+            document.getElementById('sp-link-href').href = r.tam_link;
+            document.getElementById('sp-link-href').textContent = r.tam_link;
+            if (r.gonderim_tipi === 'email') {
+                document.getElementById('sp-success-desc').innerHTML =
+                    'Dosyalar <b>' + r.alici_email + '</b> adresine iletildi!' + (r.sifre_bilgisi || '');
+                document.getElementById('sp-link-label').textContent = 'Oluşturulan Bağlantı';
+            } else {
+                document.getElementById('sp-success-desc').textContent =
+                    'Bağlantıyı istediğiniz kişilerle paylaşabilirsiniz.' + (r.sifre_bilgisi || '');
+            }
+            document.getElementById('sp-success').style.display = 'block';
+        } else {
+            var msg = (xhr.response && xhr.response.error) ? xhr.response.error : 'Bilinmeyen hata oluştu.';
+            alert('Hata: ' + msg);
+            spYenidenBasla();
+        }
+    };
+
+    xhr.onerror = function() {
+        document.getElementById('sp-progress').style.display = 'none';
+        alert('Bağlantı hatası. Lütfen tekrar deneyin.');
+        spYenidenBasla();
+    };
+
+    xhr.send(fd);
+});
+
+function spKopyala() {
+    var link = document.getElementById('sp-link-href').href;
+    navigator.clipboard.writeText(link).then(function() {
+        var btn = document.getElementById('sp-copy-text');
+        btn.textContent = '✅ Kopyalandı!';
+        setTimeout(function() { btn.textContent = 'Linki Kopyala'; }, 2000);
+    });
+}
+
+function spYenidenBasla() {
+    document.getElementById('sp-success').style.display = 'none';
+    document.getElementById('sp-form').style.display = 'block';
+    document.getElementById('share-form').reset();
+    document.getElementById('sp-file-info').innerHTML = '';
+    document.getElementById('sp-pb-fill').style.width = '0%';
+    document.getElementById('sp-pass-wrap').classList.remove('visible');
+    document.getElementById('sp-sifre-check').checked = false;
+    // saklama seçimini resetle
+    document.querySelectorAll('.sp-dur-btn').forEach(function(b) {
+        b.classList.remove('selected');
+        if (b.dataset.gun === '7') b.classList.add('selected');
+    });
+    document.getElementById('saklama-gun-val').value = '7';
+}
+</script>
+{% endblock %}

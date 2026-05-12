@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+{% block sayfa_baslik %}{{ paylasim.baslik or 'Paylaşılan Dosya' }}{% endblock %}
+
+{% block icerik %}
+<style>
+.dl-page {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+.dl-card {
+    width: 100%;
+    max-width: 560px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) + 6px);
+    box-shadow: 0 16px 48px rgba(0,0,0,.12);
+    overflow: hidden;
+}
+html[data-theme="dark"] .dl-card {
+    box-shadow: 0 16px 48px rgba(0,0,0,.45);
+}
+
+/* Header */
+.dl-header {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    padding: 2rem 2rem 1.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.dl-header::before {
+    content: '';
+    position: absolute;
+    right: -30px; top: -30px;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+    pointer-events: none;
+}
+.dl-icon {
+    font-size: 3.2rem;
+    margin-bottom: .6rem;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,.15));
+}
+.dl-header h1 {
+    color: #fff;
+    font-size: 1.45rem;
+    font-weight: 800;
+    margin: 0 0 .3rem;
+}
+.dl-header p {
+    color: rgba(255,255,255,.82);
+    font-size: .9rem;
+    margin: 0;
+}
+
+/* Şifreli kilitli banner */
+.dl-locked-banner {
+    background: linear-gradient(135deg, #dc2626 0%, #f97316 100%);
+}
+
+/* Body */
+.dl-body { padding: 1.8rem 2rem; }
+
+/* Meta bilgi */
+.dl-meta {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem;
+    margin-bottom: 1.4rem;
+}
+.dl-meta-row {
+    display: flex;
+    align-items: flex-start;
+    gap: .6rem;
+    padding: .45rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: .9rem;
+}
+.dl-meta-row:last-child { border-bottom: none; }
+.dl-meta-label {
+    color: var(--muted);
+    font-weight: 600;
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    min-width: 90px;
+    padding-top: .05rem;
+}
+.dl-meta-val { color: var(--text); flex: 1; }
+
+/* Mesaj kutusu */
+.dl-message {
+    border-left: 4px solid #10b981;
+    background: rgba(16,185,129,.07);
+    border-radius: 0 8px 8px 0;
+    padding: .9rem 1.1rem;
+    margin-bottom: 1.4rem;
+    font-style: italic;
+    color: var(--text);
+    font-size: .95rem;
+    line-height: 1.6;
+}
+html[data-theme="dark"] .dl-message {
+    background: rgba(16,185,129,.1);
+}
+
+/* Geri sayım */
+.dl-countdown {
+    text-align: center;
+    font-size: .82rem;
+    color: var(--muted);
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+}
+.dl-countdown.urgent { color: #dc2626; font-weight: 600; }
+
+/* Şifre alanı */
+.dl-pw-wrap {
+    position: relative;
+    margin-bottom: 1.2rem;
+}
+.dl-pw-wrap input {
+    width: 100%;
+    padding: .85rem 3rem .85rem 1rem;
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    background: var(--input-bg);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color .2s;
+}
+.dl-pw-wrap input:focus { outline: none; border-color: var(--accent); }
+.dl-pw-eye {
+    position: absolute; right: .9rem; top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer; color: var(--muted);
+    background: none; border: none;
+    display: flex; align-items: center;
+    padding: 0;
+}
+.dl-pw-eye:hover { color: var(--text); }
+
+/* Kilitli içerik uyarısı */
+.dl-locked-info {
+    background: rgba(220,38,38,.06);
+    border: 1px solid rgba(220,38,38,.2);
+    border-radius: 10px;
+    padding: 1.2rem;
+    text-align: center;
+    margin-bottom: 1.4rem;
+}
+.dl-locked-info .icon { font-size: 2rem; margin-bottom: .5rem; }
+.dl-locked-info p {
+    color: var(--muted);
+    font-size: .9rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* İndir butonu */
+.dl-btn {
+    display: block;
+    width: 100%;
+    padding: 1.1rem;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 4px 16px rgba(16,185,129,.35);
+    transition: filter .2s, transform .15s;
+    letter-spacing: .3px;
+    text-align: center;
+}
+.dl-btn:hover { filter: brightness(1.07); }
+.dl-btn:active { transform: translateY(1px); }
+
+/* Footer */
+.dl-footer {
+    padding: 1rem 2rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-size: .8rem;
+    color: var(--muted);
+}
+.dl-footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
+.dl-footer a:hover { text-decoration: underline; }
+
+/* Boyut badge */
+.dl-size-badge {
+    display: inline-flex; align-items: center; gap: .3rem;
+    background: rgba(16,185,129,.1); color: #059669;
+    border-radius: 20px; padding: .2rem .6rem;
+    font-size: .78rem; font-weight: 700;
+}
+</style>
+
+<div class="dl-page">
+    <div class="dl-card">
+
+        <!-- HEADER -->
+        {% if sifreli %}
+        <div class="dl-header dl-locked-banner">
+            <div class="dl-icon">🔐</div>
+            <h1>{{ paylasim.baslik or 'Şifreli Paylaşım' }}</h1>
+            <p>Bu dosyaya erişmek için şifre gerekiyor.</p>
+        </div>
+        {% else %}
+        <div class="dl-header">
+            <div class="dl-icon">📦</div>
+            <h1>{{ paylasim.baslik or 'Paylaşılan Dosya' }}</h1>
+            <p>Dosya(lar) sizi bekliyor. İndirmeye hazır!</p>
+        </div>
+        {% endif %}
+
+        <div class="dl-body">
+
+            <!-- ŞİFRESİZ: İçerik göster -->
+            {% if not sifreli %}
+                <div class="dl-meta">
+                    <div class="dl-meta-row">
+                        <span class="dl-meta-label">📄 Dosya</span>
+                        <span class="dl-meta-val">{{ paylasim.dosya_adi[:60] }}{% if paylasim.dosya_adi|length > 60 %}…{% endif %}</span>
+                    </div>
+                    <div class="dl-meta-row">
+                        <span class="dl-meta-label">📅 Tarih</span>
+                        <span class="dl-meta-val">{{ paylasim.tarih.strftime('%d %B %Y, %H:%M') }}</span>
+                    </div>
+                    <div class="dl-meta-row">
+                        <span class="dl-meta-label">💾 Boyut</span>
+                        <span class="dl-meta-val">
+                            <span class="dl-size-badge">
+                                {% if zip_boyut < 1024 %}{{ zip_boyut }} B
+                                {% elif zip_boyut < 1048576 %}{{ (zip_boyut / 1024)|round(1) }} KB
+                                {% else %}{{ (zip_boyut / 1048576)|round(2) }} MB
+                                {% endif %}
+                            </span>
+                        </span>
+                    </div>
+                    {% if paylasim.expire_at %}
+                    <div class="dl-meta-row">
+                        <span class="dl-meta-label">⏳ Süre</span>
+                        <span class="dl-meta-val" id="meta-kalan">Hesaplanıyor...</span>
+                    </div>
+                    {% else %}
+                    <div class="dl-meta-row">
+                        <span class="dl-meta-label">⏳ Süre</span>
+                        <span class="dl-meta-val">♾️ Sonsuz</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if paylasim.mesaj %}
+                <div class="dl-message">
+                    "{{ paylasim.mesaj }}"
+                </div>
+                {% endif %}
+
+                {% if paylasim.expire_at %}
+                <div class="dl-countdown" id="dl-countdown">
+                    <span>⏳</span> <span id="countdown-text">Yükleniyor...</span>
+                </div>
+                {% endif %}
+
+                <form method="POST">
+                    <button type="submit" class="dl-btn">
+                        ⬇️ Dosyaları İndir (.ZIP)
+                    </button>
+                </form>
+
+            <!-- ŞİFRELİ: Sadece başlık görünür, içerik kilitli -->
+            {% else %}
+                {% if paylasim.baslik %}
+                <div class="dl-meta">
+                    <div class="dl-meta-row">
+                        <span class="dl-meta-label">📌 Başlık</span>
+                        <span class="dl-meta-val" style="font-weight:700;">{{ paylasim.baslik }}</span>
+                    </div>
+                    <div class="dl-meta-row">
+                        <span class="dl-meta-label">📅 Tarih</span>
+                        <span class="dl-meta-val">{{ paylasim.tarih.strftime('%d %B %Y') }}</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="dl-locked-info">
+                    <div class="icon">🔒</div>
+                    <p>Mesaj ve dosya içeriği şifre korumalıdır.<br>Devam etmek için şifreyi girin.</p>
+                </div>
+
+                <form method="POST">
+                    <div class="dl-pw-wrap">
+                        <input type="password" name="sifre" id="dl-sifre" required
+                               placeholder="Şifreyi girin...">
+                        <button type="button" class="dl-pw-eye" onclick="dlToggleGoz()" title="Göster/Gizle">
+                            <svg id="dl-eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <button type="submit" class="dl-btn">
+                        🔓 Şifreyle Giriş Yap & İndir
+                    </button>
+                </form>
+            {% endif %}
+
+        </div><!-- /dl-body -->
+
+        <div class="dl-footer">
+            <a href="{{ url_for('dosya_paylas') }}">Siz de dosya paylaşın</a>
+            &nbsp;·&nbsp;
+            <a href="{{ url_for('ana_sayfa') }}">Dönüştürücüye Git</a>
+        </div>
+    </div>
+</div>
+
+<script>
+// Göz ikonu (şifreli form)
+var dlGozAcik = false;
+function dlToggleGoz() {
+    dlGozAcik = !dlGozAcik;
+    var inp = document.getElementById('dl-sifre');
+    if (inp) inp.type = dlGozAcik ? 'text' : 'password';
+    var icon = document.getElementById('dl-eye-icon');
+    if (icon) icon.innerHTML = dlGozAcik
+        ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+        : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+}
+
+// Geri sayım (sadece expire_at varsa)
+{% if paylasim.expire_at and not sifreli %}
+(function() {
+    var expireMs = {{ (paylasim.expire_at | string | replace('T', ' ') | replace('Z', '')) }};
+    // ISO string olarak geçiyoruz
+    var expireDate = new Date('{{ paylasim.expire_at.isoformat() }}Z');
+
+    function formatSure(sn) {
+        if (sn <= 0) return 'Süre doldu!';
+        var g = Math.floor(sn / 86400);
+        var s = Math.floor((sn % 86400) / 3600);
+        var d = Math.floor((sn % 3600) / 60);
+        var parts = [];
+        if (g > 0) parts.push(g + ' gün');
+        if (s > 0) parts.push(s + ' saat');
+        if (g === 0) parts.push(d + ' dk');
+        return parts.join(' ');
+    }
+
+    function guncelle() {
+        var kalan = Math.max(0, Math.floor((expireDate - new Date()) / 1000));
+        var el = document.getElementById('countdown-text');
+        var row = document.getElementById('dl-countdown');
+        var meta = document.getElementById('meta-kalan');
+        if (!el) return;
+        var txt = formatSure(kalan);
+        el.textContent = txt + ' kaldı';
+        if (meta) meta.textContent = txt + ' kaldı';
+        if (kalan < 3600 && row) row.classList.add('urgent');
+    }
+
+    guncelle();
+    setInterval(guncelle, 10000);
+})();
+{% endif %}
+</script>
+{% endblock %}

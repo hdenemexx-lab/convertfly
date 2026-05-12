@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block sayfa_baslik %}{{ baslik }}{% endblock %}
+
+{% block icerik %}
+<div class="page-convert" style="max-width: 640px; margin: 0 auto; padding: 2.25rem 1.25rem 3rem;">
+    <div class="convert-hero" style="text-align: center; margin-bottom: 1.75rem;">
+        <h1 class="convert-title">PDF Dosyalarını Birleştir</h1>
+        <p class="convert-sub">Birden fazla PDF'i tek bir dosyada birleştirmek için belgelerinizi yükleyin. Yüklediğiniz dosyaların sırasını kolayca düzenleyebilir ve istemediğiniz dosyaları listeden çıkarabilirsiniz.</p>
+    </div>
+
+    <div class="convert-panel">
+        <form action="{{ url_for('pdf_birlestir') }}" method="post" enctype="multipart/form-data" class="convert-form" id="pdf-form">
+            <div class="format-control" style="width: 100%;">
+                <input type="file" id="pdf-upload" name="dosyalar" accept=".pdf" multiple style="display:none;" onchange="gosterDosyalar(this)">
+                <label for="pdf-upload" class="drop-panel" id="drop-area" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
+                    <div class="drop-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                        </svg>
+                    </div>
+                    <h3 class="drop-title">Dosya Seç (PDF)</h3>
+                    <p class="drop-sub">ya da sürükleyip buraya bırakın</p>
+                    <span class="btn-ghost" style="margin-top:0.5rem;">Cihazdan Gözat</span>
+                </label>
+            </div>
+            
+            <div id="dosya-listesi-kapsayici" style="display: none; margin-top: 1rem;">
+                <p class="dosya-list-baslik" style="font-size: 0.9rem; font-weight: 600;">Birleştirilecek Sıra (1'den İtibaren):</p>
+                <div id="pdf-isimleri" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 240px; overflow-y: auto; background: var(--input-bg); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                    <!-- JavaScript ile buraya isimler gelecek -->
+                </div>
+            </div>
+
+            <button type="submit" class="btn-convert" style="margin-top: 0.5rem;">
+                PDF'leri Birleştir
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    let secilebilirDosyalar = [];
+    const inputElement = document.getElementById('pdf-upload');
+    const formElement = document.getElementById('pdf-form');
+    
+    function gosterDosyalar(input) {
+        if (!input.files || input.files.length === 0) return;
+        
+        for(let i = 0; i < input.files.length; i++) {
+            secilebilirDosyalar.push(input.files[i]);
+        }
+        
+        // Inputu temizle ki yeniden aynı dosyaları da ekleyebilsin
+        input.value = ''; 
+        listeyiCiz();
+    }
+    
+    function listeyiCiz() {
+        const listContainer = document.getElementById('dosya-listesi-kapsayici');
+        const listElement = document.getElementById('pdf-isimleri');
+        
+        listElement.innerHTML = ''; 
+        
+        if (secilebilirDosyalar.length > 0) {
+            listContainer.style.display = 'block';
+            secilebilirDosyalar.forEach((dosya, index) => {
+                const item = document.createElement('div');
+                item.style.fontSize = '0.85rem';
+                item.style.padding = '0.5rem';
+                item.style.borderBottom = '1px solid var(--border)';
+                item.style.display = 'flex';
+                item.style.alignItems = 'center';
+                item.style.justifyContent = 'space-between';
+                
+                const solTaraf = document.createElement('div');
+                solTaraf.style.display = 'flex';
+                solTaraf.style.alignItems = 'center';
+                solTaraf.style.gap = '0.5rem';
+                solTaraf.innerHTML = `<span style="color:var(--muted); font-weight:bold; width:20px;">${index + 1}.</span> 📄 <strong style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${dosya.name}">${dosya.name}</strong> <span style="color:var(--muted); font-size:0.8rem; margin-left:0.5rem;">(${boyutYazi(dosya.size)})</span>`;
+                
+                const sagTaraf = document.createElement('div');
+                sagTaraf.style.display = 'flex';
+                sagTaraf.style.gap = '0.5rem';
+                
+                if (index > 0) {
+                    const btnYukari = document.createElement('button');
+                    btnYukari.type = 'button';
+                    btnYukari.innerHTML = '⬆️';
+                    btnYukari.style.background = 'none';
+                    btnYukari.style.border = 'none';
+                    btnYukari.style.cursor = 'pointer';
+                    btnYukari.onclick = () => sirayiDegistir(index, -1);
+                    sagTaraf.appendChild(btnYukari);
+                }
+                
+                if (index < secilebilirDosyalar.length - 1) {
+                    const btnAsagi = document.createElement('button');
+                    btnAsagi.type = 'button';
+                    btnAsagi.innerHTML = '⬇️';
+                    btnAsagi.style.background = 'none';
+                    btnAsagi.style.border = 'none';
+                    btnAsagi.style.cursor = 'pointer';
+                    btnAsagi.onclick = () => sirayiDegistir(index, 1);
+                    sagTaraf.appendChild(btnAsagi);
+                }
+                
+                const btnSil = document.createElement('button');
+                btnSil.type = 'button';
+                btnSil.innerHTML = '❌';
+                btnSil.style.background = 'none';
+                btnSil.style.border = 'none';
+                btnSil.style.cursor = 'pointer';
+                btnSil.style.marginLeft = '0.5rem';
+                btnSil.onclick = () => dosyayiSil(index);
+                sagTaraf.appendChild(btnSil);
+                
+                item.appendChild(solTaraf);
+                item.appendChild(sagTaraf);
+                listElement.appendChild(item);
+            });
+        } else {
+            listContainer.style.display = 'none';
+        }
+    }
+    
+    function sirayiDegistir(index, yon) {
+        const yeniIndex = index + yon;
+        if (yeniIndex >= 0 && yeniIndex < secilebilirDosyalar.length) {
+            const gecici = secilebilirDosyalar[index];
+            secilebilirDosyalar[index] = secilebilirDosyalar[yeniIndex];
+            secilebilirDosyalar[yeniIndex] = gecici;
+            listeyiCiz();
+        }
+    }
+    
+    function dosyayiSil(index) {
+        secilebilirDosyalar.splice(index, 1);
+        listeyiCiz();
+    }
+    
+    function boyutYazi(bayt) {
+        if (bayt == null || isNaN(bayt)) return "";
+        if (bayt < 1024) return bayt + " B";
+        if (bayt < 1024 * 1024) return (bayt / 1024).toFixed(1) + " KB";
+        return (bayt / (1024 * 1024)).toFixed(2) + " MB";
+    }
+
+    // Sürükle-bırak özellikleri
+    const dropArea = document.getElementById('drop-area');
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => {
+            dropArea.classList.add('drop-panel--active');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => {
+            dropArea.classList.remove('drop-panel--active');
+        });
+    });
+
+    dropArea.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            let eklenenVar = false;
+            for(let i = 0; i < files.length; i++) {
+                if (files[i].type === "application/pdf" || files[i].name.toLowerCase().endsWith('.pdf')) {
+                    secilebilirDosyalar.push(files[i]);
+                    eklenenVar = true;
+                }
+            }
+            if(!eklenenVar) alert("Lütfen sadece PDF dosyası bırakın.");
+            listeyiCiz();
+        }
+    });
+
+    formElement.addEventListener('submit', function(e) {
+        if (secilebilirDosyalar.length < 2) {
+            e.preventDefault();
+            alert("Lütfen birleştirmek için en az 2 adet PDF dosyası belirleyin!");
+            return;
+        }
+        
+        const dt = new DataTransfer();
+        secilebilirDosyalar.forEach(dosya => {
+            dt.items.add(dosya);
+        });
+        
+        inputElement.files = dt.files;
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<!-- Ortak şablon: ikonlu üst bar, tema, giriş/kayıt formları -->
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block sayfa_baslik %}{{ baslik }}{% endblock %} · Dönüştürücü</title>
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem("theme") === "dark")
+                    document.documentElement.setAttribute("data-theme", "dark");
+            } catch (e) { }
+        })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="{{ url_for('ana_sayfa') }}">
+                <span class="brand-icon" aria-hidden="true">
+                    <svg width="36" height="36" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="32" height="32" rx="8" fill="url(#g)" />
+                        <path d="M10 12h8l-2.5-2.5M18 20h-8l2.5 2.5" stroke="#fff" stroke-width="1.6"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M22 10v12" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".85" />
+                        <defs>
+                            <linearGradient id="g" x1="6" y1="4" x2="26" y2="28" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#dc2626" />
+                                <stop offset="1" stop-color="#f97316" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </span>
+                <span class="brand-text">Dönüştürücü</span>
+            </a>
+
+            <div class="topbar-end">
+                <nav class="topbar-nav" aria-label="Sayfalar" style="display: flex; align-items: center; gap: 1.5rem;">
+                    <a href="{{ url_for('dosya_paylas') }}" class="dropdown-trigger"
+                        style="display:inline-flex; align-items:center; gap:0.25rem;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:0px;">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                        </svg>
+                        <span>Dosya Paylaş</span>
+                    </a>
+                    <div class="dropdown">
+                        <a href="#" class="dropdown-trigger"
+                            style="display:inline-flex; align-items:center; gap:0.25rem;">
+                            <span>PDF Araçları</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top:2px;">
+                                <path d="m6 9 6 6 6-6" />
+                            </svg>
+                        </a>
+                        <div class="dropdown-content">
+                            <a href="{{ url_for('pdf_birlestir') }}" class="dropdown-item">
+                                <span class="drop-icon-sm">🔗</span>
+                                <div class="drop-text">
+                                    <div class="drop-title-sm">PDF Birleştirme</div>
+                                    <div class="drop-desc">Birden çok PDF dosyasını tek dosyada birleştir.</div>
+                                </div>
+                            </a>
+
+                            <a href="{{ url_for('pdf_bol') }}" class="dropdown-item">
+                                <span class="drop-icon-sm">✂️</span>
+                                <div class="drop-text">
+                                    <div class="drop-title-sm">PDF Bölme</div>
+                                    <div class="drop-desc">Büyük PDF'leri istenen sayfalara ayırın.</div>
+                                </div>
+                            </a>
+
+
+
+                            <a href="{{ url_for('pdf_islemleri') }}" class="dropdown-item">
+                                <span class="drop-icon-sm">⚙️</span>
+                                <div class="drop-text">
+                                    <div class="drop-title-sm">Ekstra PDF İşlemleri</div>
+                                    <div class="drop-desc">PDF sıkıştırma, şifreleme ve şifre kaldırma.</div>
+                                </div>
+                            </a>
+
+                        </div>
+                    </div>
+                    <a href="{{ url_for('ana_sayfa') }}" class="dropdown-trigger"
+                        style="display:inline-flex; align-items:center;">Dönüştür</a>
+                    <a href="{{ url_for('planlar') }}" class="dropdown-trigger"
+                        style="display:inline-flex; align-items:center; gap:0.25rem;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        <span>Planlar</span>
+                    </a>
+                    <a href="{{ url_for('iletisim') }}" class="dropdown-trigger"
+                        style="display:inline-flex; align-items:center;">İletişim</a>
+                </nav>
+                <div class="topbar-actions">
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('profil') }}" class="btn-auth btn-auth--primary"
+                        style="display:flex; align-items:center; gap:0.4rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        <span>{{ current_user.kullanici_adi }}</span>
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('kayit') }}" class="btn-auth">Kayıt ol</a>
+                    <a href="{{ url_for('giris') }}" class="btn-auth btn-auth--primary">Giriş yap</a>
+                    {% endif %}
+                    <button type="button" class="theme-toggle" id="theme-toggle" title="Koyu / açık tema"
+                        aria-label="Koyu temayı aç veya kapat">
+                        <span class="theme-icon theme-icon--sun" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="12" cy="12" r="4" />
+                                <path
+                                    d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+                            </svg>
+                        </span>
+                        <span class="theme-icon theme-icon--moon" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 14.5A8.5 8.5 0 0 1 9.5 3a6.5 6.5 0 1 0 11.5 11.5z" />
+                            </svg>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=True) %}
+    {% if messages %}
+    <div class="toast-wrap" role="status">
+        {% for category, text in messages %}
+        <p class="toast toast-{{ category }}">{{ text }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <main>
+        {% block icerik %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <p>Dosyalar işlendikten sonra sunucuda tutulmaz · Flask + Python</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/site.js') }}" defer></script>
+    {% block ek_script %}{% endblock %}
+</body>
+
+</html>

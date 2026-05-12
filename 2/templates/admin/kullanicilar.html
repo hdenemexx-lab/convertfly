@@ -1,0 +1,110 @@
+{% extends "admin/base.html" %}
+{% block title %}Kullanıcılar{% endblock %}
+{% block page_title %}Kullanıcı Yönetimi{% endblock %}
+{% block page_subtitle %}{{ kullanicilar|length }} kayıt listeleniyor{% endblock %}
+
+{% block topbar_actions %}
+<form method="GET" style="display:flex; gap:.5rem; align-items:center;">
+    <input type="text" name="q" value="{{ arama }}" placeholder="Kullanıcı adı veya e-posta..."
+           class="form-input" style="width:240px;">
+    <select name="plan" class="form-input">
+        <option value="">Tüm Planlar</option>
+        <option value="normal"  {% if plan_filtre=='normal'  %}selected{% endif %}>Normal</option>
+        <option value="premium" {% if plan_filtre=='premium' %}selected{% endif %}>Premium</option>
+        <option value="pro"     {% if plan_filtre=='pro'     %}selected{% endif %}>Pro</option>
+    </select>
+    <button type="submit" class="act-btn primary">Filtrele</button>
+    {% if arama or plan_filtre %}
+    <a href="{{ url_for('admin_kullanicilar') }}" class="act-btn">Temizle</a>
+    {% endif %}
+</form>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <table class="tablo">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Kullanıcı</th>
+                <th>E-posta</th>
+                <th>Plan</th>
+                <th>Kayıt Tarihi</th>
+                <th>Son Giriş</th>
+                <th>Durum</th>
+                <th style="text-align:right;">İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for u in kullanicilar %}
+        <tr>
+            <td style="color:var(--muted); font-size:.78rem; font-weight:600;">#{{ u.id }}</td>
+            <td>
+                <div style="display:flex; align-items:center; gap:.65rem;">
+                    <div style="width:30px; height:30px; border-radius:50%; flex-shrink:0;
+                                background:{% if u.bantli %}rgba(239,68,68,.15){% else %}var(--accent-soft){% endif %};
+                                color:{% if u.bantli %}var(--red){% else %}var(--accent){% endif %};
+                                display:flex; align-items:center; justify-content:center;
+                                font-weight:800; font-size:.85rem;">
+                        {{ u.kullanici_adi[0]|upper }}
+                    </div>
+                    <div>
+                        <div style="font-weight:700;">
+                            {{ u.kullanici_adi }}
+                            {% if u.is_admin %}<span style="font-size:.65rem; color:var(--accent); background:var(--accent-soft); padding:.1rem .4rem; border-radius:4px; margin-left:.3rem;">ADMIN</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td style="color:var(--muted2); font-size:.85rem;">{{ u.eposta or '—' }}</td>
+            <td>
+                {% if u.plan == 'pro' %}<span class="badge badge-pro">🚀 Pro</span>
+                {% elif u.plan == 'premium' %}<span class="badge badge-premium">⭐ Premium</span>
+                {% else %}<span class="badge badge-normal">👤 Normal</span>{% endif %}
+            </td>
+            <td style="color:var(--muted2); font-size:.82rem; white-space:nowrap;">
+                {{ u.olusturulma_tarihi.strftime('%d.%m.%Y') if u.olusturulma_tarihi else '—' }}
+            </td>
+            <td style="color:var(--muted2); font-size:.82rem; white-space:nowrap;">
+                {{ u.son_giris.strftime('%d.%m.%Y %H:%M') if u.son_giris else '—' }}
+            </td>
+            <td>
+                {% if u.bantli %}<span class="badge badge-red">🚫 Banlı</span>
+                {% else %}<span class="badge badge-green">✓ Aktif</span>{% endif %}
+            </td>
+            <td>
+                <div style="display:flex; gap:.4rem; justify-content:flex-end; align-items:center; flex-wrap:wrap;">
+                    <!-- Ban / Unban -->
+                    {% if not u.is_admin %}
+                    <form method="POST" action="{{ url_for('admin_kullanici_ban', uid=u.id) }}"
+                          onsubmit="return confirm('{{ u.kullanici_adi }} {% if u.bantli %}aktifleştirilsin{% else %}askıya alınsın{% endif %} mı?')">
+                        <button type="submit" class="act-btn {% if u.bantli %}unban{% else %}ban{% endif %}">
+                            {% if u.bantli %}▶ Aktifleştir{% else %}🚫 Askıya Al{% endif %}
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- Plan Değiştir -->
+                    <form method="POST" action="{{ url_for('admin_kullanici_plan', uid=u.id) }}"
+                          style="display:flex; gap:.3rem; align-items:center;">
+                        <select name="plan" class="form-input" style="padding:.3rem .5rem; font-size:.75rem;">
+                            <option value="normal"  {% if u.plan=='normal'  %}selected{% endif %}>Normal</option>
+                            <option value="premium" {% if u.plan=='premium' %}selected{% endif %}>Premium</option>
+                            <option value="pro"     {% if u.plan=='pro'     %}selected{% endif %}>Pro</option>
+                        </select>
+                        <button type="submit" class="act-btn primary">Kaydet</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="8" style="text-align:center; padding:3rem; color:var(--muted);">
+                {% if arama %}🔍 "{{ arama }}" için sonuç bulunamadı.{% else %}Kayıtlı kullanıcı yok.{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

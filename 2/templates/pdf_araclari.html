@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block sayfa_baslik %}{{ baslik }}{% endblock %}
+
+{% block icerik %}
+<div class="page-narrow" style="max-width:600px;">
+    <div class="panel-card" style="text-align:center;">
+        <h2 class="page-heading">⚙️ Ekstra PDF İşlemleri</h2>
+        <p class="drop-sub" style="margin-bottom:2rem;">PDF'lerinizi tek ekrandan sıkıştırın, şifreleyin veya mevcut parolasını kaldırın.</p>
+
+        <form action="{{ url_for('pdf_islemleri') }}" method="POST" enctype="multipart/form-data">
+            <label class="drop-panel" for="dosya-input" style="display:block; padding:2rem; cursor:pointer; margin-bottom:1.5rem;">
+                <div style="font-size:2.5rem; margin-bottom:0.5rem;" id="islem-ikon">⚙️</div>
+                <strong style="display:block; margin-bottom:0.5rem; color:var(--text);">PDF Seçin</strong>
+                <input type="file" name="dosyalar" id="dosya-input" accept=".pdf" multiple required style="display:none;"
+                    onchange="document.getElementById('sonuc').innerText = this.files.length + ' dosya seçildi ✅'; document.getElementById('sonuc').style.color='var(--accent)';">
+                <span id="sonuc" style="font-size:0.85rem; color:var(--muted);">Birden fazla PDF seçebilirsiniz (ZIP olarak indirilir)</span>
+            </label>
+
+            <div style="margin-bottom:1.5rem; text-align:left;">
+                <label class="field-label" style="margin-bottom:.5rem;display:block;">YAPILACAK İŞLEM</label>
+                <div class="format-control">
+                    <select name="islem_turu" id="islem-secici" class="select-format"
+                        required onchange="islemDegisti()">
+                        <option value="sikistir">🗜️ PDF Sıkıştırma — Dosya Boyutunu Küçült</option>
+                        <option value="sifrele">🔒 PDF Şifreleme — Parola Ekle</option>
+                        <option value="sifre_kaldir">🔓 PDF Şifre Kaldırma — Mevcut Parolayı Sil</option>
+                    </select>
+                    <span class="format-chevron"></span>
+                </div>
+            </div>
+
+            <div id="parola-alani" style="margin-bottom:1.5rem; text-align:left; display:none;">
+                <label id="parola-etiketi" class="field-label" style="margin-bottom:.5rem;display:block;">PAROLA</label>
+                <input type="password" name="parola" id="parola-input" class="input-text"
+                    style="width:100%;" placeholder="Şifreyi giriniz...">
+            </div>
+
+            <button type="submit" class="btn-convert">
+                <span id="buton-metni">İşlemi Başlat ve İndir</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function islemDegisti() {
+    var s = document.getElementById('islem-secici').value;
+    var pa = document.getElementById('parola-alani');
+    var pi = document.getElementById('parola-input');
+    var pe = document.getElementById('parola-etiketi');
+    var bm = document.getElementById('buton-metni');
+    var ik = document.getElementById('islem-ikon');
+    if(s === 'sikistir') {
+        pa.style.display='none'; pi.required=false;
+        bm.innerText='Sıkıştır ve İndir'; ik.innerText='🗜️';
+    } else if(s === 'sifrele') {
+        pa.style.display='block'; pe.innerText='YENİ ŞİFRE';
+        pi.placeholder="PDF'yi kilitlemek için güvenli bir şifre...";
+        pi.required=true; bm.innerText='Şifrele ve İndir'; ik.innerText='🔒';
+    } else {
+        pa.style.display='block'; pe.innerText='MEVCUT ŞİFRE';
+        pi.placeholder="PDF'nin şu anki şifresini girin...";
+        pi.required=true; bm.innerText='Şifreyi Kaldır ve İndir'; ik.innerText='🔓';
+    }
+}
+window.addEventListener('DOMContentLoaded', islemDegisti);
+</script>
+{% endblock %}

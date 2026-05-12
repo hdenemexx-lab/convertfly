@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block sayfa_baslik %}{{ baslik }}{% endblock %}
+
+{% block icerik %}
+<div class="page-narrow">
+    <div class="panel-card">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div style="display:inline-flex; padding:0.75rem; background:var(--accent-soft); color:var(--accent); border-radius:50%; margin-bottom:0.75rem;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            </div>
+            <h1 class="page-heading">Bize Ulaşın</h1>
+            <p class="page-lead" style="margin-bottom:0;">Sorularınız, önerileriniz veya bildirmek istediğiniz hatalarınız mi var? Buradan bizimle iletişime geçin.</p>
+        </div>
+
+        <form class="stack-form" method="post" action="{{ url_for('iletisim') }}" novalidate>
+            <label class="field-label" for="ad">Ad Soyad</label>
+            <input id="ad" name="ad" type="text" autocomplete="name" required class="input-text" placeholder="Adınızı girin">
+
+            <label class="field-label" for="eposta">E-posta</label>
+            <input id="eposta" name="eposta" type="email" autocomplete="email" required class="input-text" placeholder="E-posta adresinizi girin">
+
+            <label class="field-label" for="mesaj">Mesaj</label>
+            <textarea id="mesaj" name="mesaj" rows="5" required class="input-text" placeholder="Mesajınızı buraya yazın..."></textarea>
+
+            <button type="submit" class="btn-convert" style="margin-top: 0.5rem;">Gönder</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

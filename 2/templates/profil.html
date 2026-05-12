@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+{% block sayfa_baslik %}Profilim · Kontrol Paneli{% endblock %}
+
+{% block icerik %}
+<style>
+/* ─── CSS değişkenlerine birebir sadık profil stilleri ─── */
+.p-wrap  { max-width:1100px; margin:0 auto; padding:1.5rem 1rem 4rem; }
+
+/* Hero */
+.p-hero  {
+    display:flex; align-items:center; gap:1.5rem;
+    background:linear-gradient(135deg,var(--accent) 0%,#f97316 100%);
+    padding:2rem 2.5rem; border-radius:calc(var(--radius)+4px);
+    margin-bottom:2rem; color:#fff;
+    box-shadow:0 8px 28px rgba(220,38,38,0.28);
+    position:relative; overflow:hidden;
+}
+.p-hero::after {
+    content:''; position:absolute; right:-3rem; top:-3rem;
+    width:200px; height:200px; border-radius:50%;
+    background:rgba(255,255,255,0.06); pointer-events:none;
+}
+.p-avatar {
+    width:62px; height:62px; border-radius:50%;
+    background:rgba(255,255,255,0.2);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.8rem; font-weight:800; flex-shrink:0;
+    border:3px solid rgba(255,255,255,0.35);
+}
+.p-hero-info h1 { font-size:1.7rem; font-weight:700; margin:0; line-height:1.2; }
+.p-hero-info p  { opacity:.85; margin:.25rem 0 0; font-size:.9rem; }
+.p-hero-cikis   { margin-left:auto; position:relative; z-index:1; }
+.p-hero-cikis a {
+    padding:.5rem 1.1rem; border-radius:8px;
+    background:rgba(255,255,255,0.18);
+    color:#fff; text-decoration:none; font-weight:600; font-size:.85rem;
+    border:1px solid rgba(255,255,255,0.28); transition:background .2s;
+}
+.p-hero-cikis a:hover { background:rgba(255,255,255,0.32); }
+
+/* İstatistik Barı */
+.p-stats {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:1rem; margin-bottom:2rem;
+}
+.p-stat {
+    background:var(--surface);
+    border:1px solid var(--border); border-radius:var(--radius);
+    padding:1.2rem 1.4rem; text-align:center;
+    box-shadow:var(--shadow);
+    transition:transform .2s, box-shadow .2s;
+}
+.p-stat:hover { transform:translateY(-3px); box-shadow:0 8px 22px rgba(0,0,0,.1); }
+.p-stat-icon  { font-size:1.6rem; margin-bottom:.4rem; }
+.p-stat-val   { font-size:2rem; font-weight:800; color:var(--accent); line-height:1; margin-bottom:.3rem; }
+.p-stat-lbl   { font-size:.78rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+
+/* Tab */
+.p-tabs {
+    display:flex; gap:.25rem; background:var(--input-bg);
+    padding:.3rem; border-radius:12px; margin-bottom:1.5rem;
+    width:fit-content; flex-wrap:wrap;
+}
+.p-tab {
+    padding:.6rem 1.4rem; border:none; background:transparent;
+    border-radius:9px; font-weight:600; color:var(--muted);
+    cursor:pointer; font-size:.88rem; font-family:inherit;
+    transition:all .2s;
+}
+.p-tab.on { background:var(--surface); color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,.08); }
+
+.p-panel { display:none; }
+.p-panel.on { display:block; }
+
+/* Kart */
+.p-card {
+    background:var(--surface);
+    border:1px solid var(--border); border-radius:calc(var(--radius)+2px);
+    overflow:hidden; box-shadow:var(--shadow); margin-bottom:1.5rem;
+}
+.p-card-head {
+    padding:1rem 1.5rem; border-bottom:1px solid var(--border);
+    font-weight:700; font-size:.95rem; color:var(--text);
+    background:var(--input-bg);
+}
+
+/* Tablo (Geçmiş) */
+.p-table { width:100%; border-collapse:collapse; font-size:.88rem; }
+.p-table thead tr { background:var(--input-bg); }
+.p-table th {
+    padding:.75rem 1.1rem; text-align:left; font-size:.75rem;
+    color:var(--muted); text-transform:uppercase; letter-spacing:.05em;
+    border-bottom:1px solid var(--border);
+}
+.p-table td { padding:.85rem 1.1rem; border-bottom:1px solid var(--border); }
+.p-table tbody tr:last-child td { border-bottom:none; }
+.p-table tbody tr:hover { background:var(--input-bg); }
+
+.badge { display:inline-block; padding:.25rem .65rem; border-radius:20px; font-size:.72rem; font-weight:700; }
+.badge-ok   { background:rgba(34,197,94,.12); color:#15803d; }
+.badge-fail { background:rgba(220,38,38,.12); color:#dc2626; }
+.badge-on   { background:rgba(34,197,94,.12); color:#15803d; }
+.badge-off  { background:rgba(100,116,139,.12); color:#64748b; }
+.badge-del  { background:rgba(220,38,38,.08); color:var(--muted); text-decoration:line-through; }
+.badge-vt-temiz    { background:rgba(16,185,129,.12); color:#059669; }
+.badge-vt-tehlikeli{ background:rgba(220,38,38,.15); color:#dc2626; }
+.badge-vt-hata     { background:rgba(100,116,139,.12); color:#64748b; }
+.badge-vt-bekliyor { background:rgba(245,158,11,.12); color:#b45309; }
+
+/* Grafik */
+.p-graf-row { display:flex; gap:2rem; align-items:center; flex-wrap:wrap; }
+.p-graf-row canvas { max-width:210px; max-height:210px; }
+.p-legend-item {
+    display:flex; align-items:center; gap:.75rem;
+    padding:.5rem 0; border-bottom:1px solid var(--border); font-size:.88rem;
+}
+.p-legend-item:last-child { border:none; }
+.p-legend-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+
+/* Paylaşım */
+.p-action-btn {
+    padding:.3rem .75rem; border-radius:6px; font-size:.78rem;
+    cursor:pointer; font-family:inherit; font-weight:600;
+    border:1px solid var(--border); background:transparent;
+    color:var(--muted); transition:all .2s;
+}
+.p-action-btn:hover  { background:var(--input-bg); color:var(--text); }
+.p-action-del        { border-color:rgba(220,38,38,.4); color:#dc2626; }
+.p-action-del:hover  { background:#dc2626; color:#fff; border-color:#dc2626; }
+
+.p-empty { text-align:center; padding:3rem 2rem; color:var(--muted); }
+.p-empty .p-empty-icon { font-size:2.5rem; margin-bottom:.75rem; }
+</style>
+
+<div class="p-wrap">
+
+    <!-- Hero -->
+    <div class="p-hero">
+        <div class="p-avatar">{{ current_user.kullanici_adi[0]|upper }}</div>
+        <div class="p-hero-info">
+            <h1>{{ current_user.kullanici_adi }}</h1>
+            <p>{{ current_user.eposta or 'E-posta eklenmemiş' }}
+               &middot; Üye: {{ current_user.olusturulma_tarihi.strftime('%d %B %Y') if current_user.olusturulma_tarihi else '—' }}
+            </p>
+        </div>
+        <!-- Plan Rozeti -->
+        <div style="margin-left:auto; margin-right:.75rem; text-align:center; position:relative; z-index:1;">
+            {% if kullanici_plan == 'pro' %}
+            <div style="background:linear-gradient(135deg,#8b5cf6,#6d28d9); color:#fff; padding:.4rem .9rem; border-radius:20px; font-size:.78rem; font-weight:800; letter-spacing:.04em;">🚀 PRO</div>
+            {% elif kullanici_plan == 'premium' %}
+            <div style="background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; padding:.4rem .9rem; border-radius:20px; font-size:.78rem; font-weight:800; letter-spacing:.04em;">⭐ PREMİUM</div>
+            {% else %}
+            <div style="background:rgba(255,255,255,0.18); color:#fff; padding:.4rem .9rem; border-radius:20px; font-size:.78rem; font-weight:700; border:1px solid rgba(255,255,255,.3);">Normal</div>
+            {% endif %}
+            <div style="font-size:.7rem; opacity:.75; margin-top:.25rem;">
+                <a href="{{ url_for('planlar') }}" style="color:#fff; text-decoration:underline; font-weight:600;">Planı yükselt ↗</a>
+            </div>
+        </div>
+        <div class="p-hero-cikis"><a href="{{ url_for('cikis') }}">Çıkış Yap</a></div>
+    </div>
+
+    <!-- İstatistikler -->
+    <div class="p-stats">
+        <div class="p-stat"><div class="p-stat-icon">🔄</div><div class="p-stat-val">{{ toplam_islem }}</div><div class="p-stat-lbl">Toplam İşlem</div></div>
+        <div class="p-stat"><div class="p-stat-icon">✅</div><div class="p-stat-val">{{ basarili_islem }}</div><div class="p-stat-lbl">Başarılı</div></div>
+        <div class="p-stat"><div class="p-stat-icon">❌</div><div class="p-stat-val">{{ toplam_islem - basarili_islem }}</div><div class="p-stat-lbl">Başarısız</div></div>
+        <div class="p-stat"><div class="p-stat-icon">💾</div><div class="p-stat-val">{{ toplam_boyut_mb }}<span style="font-size:1rem;font-weight:500"> MB</span></div><div class="p-stat-lbl">İşlenen</div></div>
+        <div class="p-stat"><div class="p-stat-icon">🔗</div><div class="p-stat-val">{{ paylasimlar|length }}<span style="font-size:1rem;font-weight:500;color:var(--muted)"> / {{ silinmis_paylasimlar|length }} sil</span></div><div class="p-stat-lbl">Paylaşım</div></div>
+    </div>
+
+    <!-- Tablar -->
+    <div class="p-tabs">
+        <button class="p-tab on" onclick="pgTab('gecmis',this)">📋 Dönüşüm Geçmişi</button>
+        <button class="p-tab" onclick="pgTab('grafik',this)">📊 Grafik</button>
+        <button class="p-tab" onclick="pgTab('linkler',this)">🔗 Linkler</button>
+        <button class="p-tab" onclick="pgTab('silinenler',this)">🗄️ Silinen Linkler</button>
+    </div>
+
+    <!-- Panel: Dönüşüm Geçmişi -->
+    <div class="p-panel on" id="pg-gecmis">
+        <div class="p-card">
+            {% if donusumler %}
+            <table class="p-table">
+                <thead><tr>
+                    <th>#</th><th>Dosya Adı</th><th>Dönüşüm</th><th>Boyut</th><th>Tarih</th><th>Durum</th>
+                </tr></thead>
+                <tbody>
+                {% for d in donusumler %}
+                <tr>
+                    <td style="color:var(--muted);font-size:.78rem;">{{ loop.index }}</td>
+                    <td style="max-width:200px;">
+                        {% if d.dosya_adi %}
+                            <span title="{{ d.dosya_adi }}" style="font-weight:600;">
+                                {{ d.dosya_adi[:32] }}{% if d.dosya_adi|length > 32 %}…{% endif %}
+                            </span>
+                        {% else %}
+                            <span style="color:var(--muted);">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span style="font-weight:600;">{{ d.kaynak_format|upper }}</span>
+                        <span style="color:var(--muted);margin:0 .3rem;">→</span>
+                        <span style="color:var(--accent);font-weight:700;">{{ d.hedef_format|upper }}</span>
+                    </td>
+                    <td style="color:var(--muted);font-size:.82rem;">{{ (d.dosya_boyutu // 1024) if d.dosya_boyutu else '—' }} KB</td>
+                    <td style="color:var(--muted);font-size:.82rem;white-space:nowrap;">{{ d.tarih.strftime('%d.%m.%Y %H:%M') }}</td>
+                    <td>
+                        {% if d.basari_durumu %}
+                            <span class="badge badge-ok">✓ Başarılı</span>
+                        {% else %}
+                            <span class="badge badge-fail">✗ Hata</span>
+                            {% if d.hata_mesaji %}<br><span style="font-size:.75rem;color:#dc2626;">{{ d.hata_mesaji[:50] }}</span>{% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="p-empty"><div class="p-empty-icon">📂</div><p>Henüz dönüşüm yapılmadı.</p><a href="{{ url_for('ana_sayfa') }}" class="btn-ghost" style="margin-top:.75rem;display:inline-block;">İlk dönüşümü yap →</a></div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Panel: Grafik -->
+    <div class="p-panel" id="pg-grafik">
+        {% if format_labels %}
+        <div class="p-card">
+            <div class="p-card-head">📊 Başarılı Dönüşümler — Format Dağılımı</div>
+            <div style="padding:1.5rem;">
+                <div class="p-graf-row">
+                    <canvas id="fmtChart"></canvas>
+                    <div style="flex:1;" id="fmtLegend"></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="p-card">
+            <div class="p-card-head">🎯 Genel Özet</div>
+            <div style="padding:1.5rem; display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                <div style="background:var(--input-bg);padding:1.1rem;border-radius:var(--radius);">
+                    <div style="font-size:.78rem;color:var(--muted);margin-bottom:.4rem;">Başarı Oranı</div>
+                    {% if toplam_islem > 0 %}{% set oran = ((basarili_islem / toplam_islem) * 100)|round(1) %}{% else %}{% set oran = 0 %}{% endif %}
+                    <div style="font-size:2rem;font-weight:800;color:var(--accent);">%{{ oran }}</div>
+                    <div style="background:var(--border);border-radius:999px;height:6px;margin-top:.5rem;overflow:hidden;">
+                        <div style="background:var(--accent);height:100%;width:{{ oran }}%;border-radius:999px;"></div>
+                    </div>
+                </div>
+                <div style="background:var(--input-bg);padding:1.1rem;border-radius:var(--radius);">
+                    <div style="font-size:.78rem;color:var(--muted);margin-bottom:.4rem;">Aktif Paylaşım</div>
+                    <div style="font-size:2rem;font-weight:800;color:#f97316;">{{ paylasimlar|selectattr('aktif')|list|length }}</div>
+                    <div style="font-size:.78rem;color:var(--muted);margin-top:.4rem;">/ {{ paylasimlar|length }} toplam aktif</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel: Aktif Linkler -->
+    <div class="p-panel" id="pg-linkler">
+        <div class="p-card">
+            {% if paylasimlar %}
+            <table class="p-table">
+                <thead><tr><th>Dosya(lar)</th><th>Link</th><th>Mesaj</th><th>Tarih</th><th>Süre</th><th>Durum</th>{% if kullanici_plan == 'pro' %}<th>VT Taraşası</th>{% endif %}<th>İşlem</th></tr></thead>
+                <tbody>
+                {% for p in paylasimlar %}
+                <tr>
+                    <td style="max-width:180px;">
+                        <strong title="{{ p.dosya_adi }}">{{ p.dosya_adi[:36] }}{% if p.dosya_adi|length > 36 %}…{% endif %}</strong>
+                        {% if p.indirme_sifresi %}<br><span style="font-size:.74rem;color:var(--muted);">&#128274; Şifre Korumalı</span>{% endif %}
+                    </td>
+                    <td>
+                        <code style="font-size:.75rem;">/paylasim/{{ p.link_id }}</code>
+                        <button class="p-action-btn" style="margin-left:.4rem;" onclick="kopyala('{{ p.link_id }}', this)">&#128203;</button>
+                    </td>
+                    <td style="color:var(--muted);font-size:.82rem;max-width:140px;">{{ p.mesaj[:50] if p.mesaj else '—' }}{% if p.mesaj and p.mesaj|length > 50 %}…{% endif %}</td>
+                    <td style="font-size:.8rem;color:var(--muted);white-space:nowrap;">{{ p.tarih.strftime('%d.%m.%Y') }}</td>
+                    <td style="font-size:.8rem;white-space:nowrap;">
+                        {% if p.expire_at is none %}
+                            <span style="color:#8b5cf6;font-weight:700;">♾️ Sonsuz</span>
+                        {% else %}
+                            <span class="p-countdown" data-expire="{{ p.expire_at.isoformat() }}">Yükleniyor...</span>
+                        {% endif %}
+                    </td>
+                    <td>{% if p.aktif %}<span class="badge badge-on">Aktif</span>{% else %}<span class="badge badge-off">Pasif</span>{% endif %}</td>
+                    {% if kullanici_plan == 'pro' %}
+                    <td>
+                        {% if p.vt_tarama_sonucu == 'temiz' %}
+                            <span class="badge badge-vt-temiz" title="VirusTotal tarama tarih: {{ p.vt_tarama_tarihi.strftime('%d.%m.%Y %H:%M') if p.vt_tarama_tarihi }}">&#128737; Temiz</span>
+                        {% elif p.vt_tarama_sonucu == 'tehlikeli' %}
+                            <span class="badge badge-vt-tehlikeli" title="{{ p.vt_tehdit_adi or 'Tehdit tespit edildi' }}">&#9888; Tehlikeli</span>
+                        {% elif p.vt_tarama_sonucu == 'hata' %}
+                            <span class="badge badge-vt-hata" title="Tarama hata verdi">&#10006; Hata</span>
+                        {% else %}
+                            <span class="badge badge-vt-bekliyor" title="Arka planda taranıyor...">&#8987; Taranıyor</span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                    <td style="white-space:nowrap;display:flex;gap:.4rem;flex-wrap:wrap;">
+                        <form action="{{ url_for('paylasim_toggle', pid=p.id) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="p-action-btn">{{ '⏸ Durdur' if p.aktif else '▶ Aktifleştir' }}</button>
+                        </form>
+                        <form action="{{ url_for('paylasim_sil', pid=p.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Bu linki silmek istediğinize emin misiniz?')">
+                            <button type="submit" class="p-action-btn p-action-del">🗑 Sil</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="p-empty"><div class="p-empty-icon">🔗</div><p>Aktif paylaşım linki yok.</p><a href="{{ url_for('dosya_paylas') }}" class="btn-ghost" style="margin-top:.75rem;display:inline-block;">Dosya paylaş →</a></div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Panel: Silinen Linkler -->
+    <div class="p-panel" id="pg-silinenler">
+        <div class="p-card">
+            {% if silinmis_paylasimlar %}
+            <div style="padding:.75rem 1.2rem; background:rgba(220,38,38,.06); border-bottom:1px solid var(--border); font-size:.85rem; color:var(--muted);">
+                🗄️ Silinen linkler sadece görüntüleme amaçlı gösterilmektedir.
+            </div>
+            <table class="p-table">
+                <thead><tr><th>Dosya(lar)</th><th>Link ID</th><th>Mesaj</th><th>Silinme Tarihi</th><th>Durum</th></tr></thead>
+                <tbody>
+                {% for p in silinmis_paylasimlar %}
+                <tr style="opacity:.65;">
+                    <td><span title="{{ p.dosya_adi }}" style="text-decoration:line-through;">{{ p.dosya_adi[:36] }}{% if p.dosya_adi|length > 36 %}…{% endif %}</span></td>
+                    <td><code style="font-size:.75rem;opacity:.7;">/paylasim/{{ p.link_id }}</code></td>
+                    <td style="color:var(--muted);font-size:.82rem;">{{ p.mesaj[:40] if p.mesaj else '—' }}</td>
+                    <td style="font-size:.8rem;color:var(--muted);">{{ p.tarih.strftime('%d.%m.%Y') }}</td>
+                    <td><span class="badge badge-del">Silindi</span></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="p-empty"><div class="p-empty-icon">🗄️</div><p>Silinmiş kayıt bulunmuyor.</p></div>
+            {% endif %}
+        </div>
+    </div>
+
+</div><!-- /p-wrap -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script>
+/* Tab sistemi */
+function pgTab(id, btn) {
+    document.querySelectorAll('.p-panel').forEach(function(p){ p.classList.remove('on'); });
+    document.querySelectorAll('.p-tab').forEach(function(b){ b.classList.remove('on'); });
+    document.getElementById('pg-'+id).classList.add('on');
+    btn.classList.add('on');
+}
+
+/* Link kopyala */
+function kopyala(linkId, btn) {
+    navigator.clipboard.writeText(location.origin+'/paylasim/'+linkId).then(function(){
+        btn.innerText = '✅'; setTimeout(function(){ btn.innerText = '📋'; }, 2000);
+    });
+}
+
+/* Paylaşım countdown'ları */
+(function() {
+    function formatKalan(sn) {
+        if (sn <= 0) return '<span style="color:#dc2626;font-weight:700;">Süresi Doldu</span>';
+        var g = Math.floor(sn / 86400);
+        var s = Math.floor((sn % 86400) / 3600);
+        if (g > 0) return '<span style="color:var(--text);font-weight:600;">' + g + ' gün ' + s + ' sa</span>';
+        var d = Math.floor((sn % 3600) / 60);
+        var renk = sn < 3600 ? '#dc2626' : '#f97316';
+        return '<span style="color:' + renk + ';font-weight:700;">' + s + ' sa ' + d + ' dk</span>';
+    }
+
+    function guncelleCountdown() {
+        document.querySelectorAll('.p-countdown').forEach(function(el) {
+            var iso = el.dataset.expire;
+            if (!iso) return;
+            var exp = new Date(iso + 'Z');
+            var kalan = Math.max(0, Math.floor((exp - new Date()) / 1000));
+            el.innerHTML = formatKalan(kalan);
+        });
+    }
+
+    guncelleCountdown();
+    setInterval(guncelleCountdown, 30000);
+})();
+
+/* Donut Chart */
+{% if format_labels %}
+(function(){
+    var COLORS = ['#dc2626','#f97316','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
+    var labels = {{ format_labels | tojson }};
+    var values = {{ format_values | tojson }};
+    var total  = values.reduce(function(a,b){return a+b;},0);
+
+    new Chart(document.getElementById('fmtChart').getContext('2d'), {
+        type:'doughnut',
+        data:{ labels:labels, datasets:[{ data:values, backgroundColor:COLORS.slice(0,labels.length), borderWidth:3, borderColor:'transparent' }] },
+        options:{ cutout:'68%', plugins:{ legend:{display:false}, tooltip:{callbacks:{label:function(c){return ' '+c.label+': '+c.raw;} }}}, animation:{duration:800} }
+    });
+
+    var leg = document.getElementById('fmtLegend');
+    labels.forEach(function(l,i){
+        var pct=((values[i]/total)*100).toFixed(1);
+        leg.innerHTML+='<div class="p-legend-item"><div class="p-legend-dot" style="background:'+COLORS[i]+'"></div><div style="flex:1"><strong>'+l+'</strong> <span style="color:var(--muted);font-size:.8rem;">('+values[i]+' işlem · %'+pct+')</span></div></div>';
+    });
+})();
+{% endif %}
+</script>
+{% endblock %}

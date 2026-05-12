@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block sayfa_baslik %}{{ baslik }}{% endblock %}
+
+{% block icerik %}
+<div class="main-container">
+    <div class="auth-card">
+        <h1 class="page-title" style="text-align: center;">Giriş Yap</h1>
+        <p class="section-lead" style="text-align: center;">Hesabınıza girerek önceki dönüşümlerinize ulaşın.</p>
+        
+        <form class="auth-form" method="POST" action="{{ url_for('giris') }}" style="max-width: 400px; margin: 2rem auto;">
+            <label class="field-label" for="kullanici_adi">Kullanıcı Adı</label>
+            <input class="input-text" id="kullanici_adi" name="kullanici_adi" type="text" autocomplete="username" placeholder="Kullanıcı adınız" required>
+
+            <label class="field-label" for="sifre">Şifre</label>
+            <input class="input-text" id="sifre" name="sifre" type="password" autocomplete="current-password" placeholder="••••••••" required>
+
+            <button type="submit" class="btn-convert" style="margin-top: 1rem;">Giriş Yap</button>
+        </form>
+        <p style="text-align: center; margin-top: 1.5rem; color: var(--color-text-mut);">
+            Hesabınız yok mu? <a href="{{ url_for('kayit') }}" style="color: var(--color-accent); font-weight: 500;">Kayıt Ol</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

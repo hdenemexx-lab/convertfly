@@ -1,0 +1,129 @@
+{% extends "admin/base.html" %}
+{% block title %}Dosya Denetimi{% endblock %}
+{% block page_title %}Dosya Denetimi{% endblock %}
+{% block page_subtitle %}{{ dosyalar|length }} kayıt listeleniyor{% endblock %}
+
+{% block topbar_actions %}
+<div style="display:flex; gap:.4rem;">
+    <a href="{{ url_for('admin_dosyalar') }}"
+       class="act-btn {% if not vt_filtre %}primary{% endif %}">Tümü</a>
+    <a href="{{ url_for('admin_dosyalar', vt='tehlikeli') }}"
+       class="act-btn {% if vt_filtre=='tehlikeli' %}primary{% endif %}">⚠️ Karantina</a>
+    <a href="{{ url_for('admin_dosyalar', vt='temiz') }}"
+       class="act-btn {% if vt_filtre=='temiz' %}primary{% endif %}">🛡️ Temiz</a>
+    <a href="{{ url_for('admin_dosyalar', vt='silinmis') }}"
+       class="act-btn {% if vt_filtre=='silinmis' %}primary{% endif %}">🗑️ Silinmiş</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <table class="tablo">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Dosya Adı</th>
+                <th>Link ID</th>
+                <th>Yükleyen</th>
+                <th>Saklama</th>
+                <th>VT Güvenlik</th>
+                <th>Tarih</th>
+                <th>Durum</th>
+                <th style="text-align:right;">İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for d in dosyalar %}
+        <tr>
+            <td style="color:var(--muted); font-size:.78rem; font-weight:600;">#{{ d.id }}</td>
+            <td style="max-width:220px;">
+                <div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                     title="{{ d.dosya_adi }}">{{ d.dosya_adi }}</div>
+                {% if d.indirme_sifresi %}
+                <span style="font-size:.7rem; color:var(--orange);">🔒 Şifreli</span>
+                {% endif %}
+                {% if d.baslik %}
+                <div style="font-size:.72rem; color:var(--muted); margin-top:.1rem;">{{ d.baslik[:40] }}</div>
+                {% endif %}
+            </td>
+            <td>
+                <code style="font-size:.72rem; color:var(--muted2); background:var(--card2); padding:.2rem .5rem; border-radius:4px;">
+                    {{ d.link_id }}
+                </code>
+            </td>
+            <td>
+                {% if d.kullanici and d.kullanici.kullanici_adi %}
+                    <span style="font-weight:600;">{{ d.kullanici.kullanici_adi }}</span>
+                    {% if d.kullanici.plan == 'pro' %}<span class="badge badge-pro" style="margin-left:.3rem; font-size:.62rem;">Pro</span>{% endif %}
+                {% else %}
+                    <span style="color:var(--muted);">Misafir</span>
+                {% endif %}
+            </td>
+            <td style="font-size:.82rem; white-space:nowrap; color:var(--muted2);">
+                {% if d.saklama_gun is none %}
+                    <span style="color:#a855f7; font-weight:700;">♾️ Sonsuz</span>
+                {% else %}
+                    {{ d.saklama_gun }} gün
+                    {% if d.suresi_dolmus_mu %}
+                    <span class="badge badge-red" style="margin-left:.3rem;">Süresi Doldu</span>
+                    {% endif %}
+                {% endif %}
+            </td>
+            <td>
+                {% if d.vt_tarama_sonucu == 'temiz' %}
+                    <span class="badge badge-green" title="Tarama: {{ d.vt_tarama_tarihi.strftime('%d.%m.%Y %H:%M') if d.vt_tarama_tarihi else '' }}">🛡️ Temiz</span>
+                {% elif d.vt_tarama_sonucu == 'tehlikeli' %}
+                    <span class="badge badge-red" title="{{ d.vt_tehdit_adi or 'Tehdit tespit edildi' }}">⚠️ Tehlikeli</span>
+                    {% if d.vt_tehdit_adi %}
+                    <div style="font-size:.65rem; color:var(--red); margin-top:.2rem; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ d.vt_tehdit_adi }}">{{ d.vt_tehdit_adi[:30] }}</div>
+                    {% endif %}
+                {% elif d.vt_tarama_sonucu == 'istisna' %}
+                    <span class="badge badge-orange">⚡ İstisna</span>
+                {% elif d.vt_tarama_sonucu == 'hata' %}
+                    <span class="badge badge-gray">❌ Hata</span>
+                {% else %}
+                    <span class="badge badge-gray">— Taranmadı</span>
+                {% endif %}
+            </td>
+            <td style="font-size:.8rem; color:var(--muted2); white-space:nowrap;">
+                {{ d.tarih.strftime('%d.%m.%Y<br>%H:%M')|safe }}
+            </td>
+            <td>
+                {% if d.silindi %}<span class="badge badge-red">Silindi</span>
+                {% elif d.aktif %}<span class="badge badge-green">Aktif</span>
+                {% else %}<span class="badge badge-gray">Pasif</span>{% endif %}
+            </td>
+            <td>
+                <div style="display:flex; gap:.35rem; justify-content:flex-end; flex-wrap:wrap;">
+                    <a href="{{ url_for('paylasim_goster', link_id=d.link_id) }}" target="_blank"
+                       class="act-btn" title="Paylaşım sayfasını aç">↗</a>
+
+                    {% if d.vt_tarama_sonucu == 'tehlikeli' and not d.silindi %}
+                    <form method="POST" action="{{ url_for('admin_dosya_istisna', did=d.id) }}"
+                          onsubmit="return confirm('Bu dosyayı istisna olarak işaretle?')">
+                        <button type="submit" class="act-btn" style="border-color:rgba(245,158,11,.3); color:var(--orange);">⚡ İstisna</button>
+                    </form>
+                    {% endif %}
+
+                    {% if not d.silindi %}
+                    <form method="POST" action="{{ url_for('admin_dosya_sil', did=d.id) }}"
+                          onsubmit="return confirm('{{ d.dosya_adi }} silinsin mi? Bu işlem geri alınamaz.')">
+                        <button type="submit" class="act-btn del">🗑 Sil</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="9" style="text-align:center; padding:3rem; color:var(--muted);">
+                {% if vt_filtre == 'tehlikeli' %}🛡️ Karantinada dosya yok.
+                {% elif vt_filtre == 'silinmis' %}🗑️ Silinmiş dosya yok.
+                {% else %}📂 Dosya bulunamadı.{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

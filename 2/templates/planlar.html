@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% block sayfa_baslik %}Planlar · Üyelik{% endblock %}
+
+{% block icerik %}
+<style>
+.pl-wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 3rem 1rem 5rem;
+}
+
+/* Başlık */
+.pl-hero {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+.pl-hero h1 {
+    font-size: 2.6rem;
+    font-weight: 900;
+    margin: 0 0 .7rem;
+    background: linear-gradient(135deg, var(--accent) 0%, #f97316 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.pl-hero p {
+    color: var(--muted);
+    font-size: 1.1rem;
+    max-width: 560px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+
+/* Plan kartları */
+.pl-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.pl-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: calc(var(--radius) + 6px);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform .2s, box-shadow .2s;
+    position: relative;
+}
+.pl-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0,0,0,.1);
+}
+html[data-theme="dark"] .pl-card:hover {
+    box-shadow: 0 16px 40px rgba(0,0,0,.4);
+}
+.pl-card.featured {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 12px 36px rgba(220,38,38,.18);
+}
+.pl-card.mevcut-plan {
+    border-color: #10b981;
+    box-shadow: 0 0 0 1px #10b981, 0 12px 36px rgba(16,185,129,.15);
+}
+
+/* Mevcut plan rozeti */
+.pl-current-badge {
+    position: absolute;
+    top: 1rem; right: 1rem;
+    background: #10b981;
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 800;
+    padding: .25rem .7rem;
+    border-radius: 20px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+/* Popüler rozeti */
+.pl-popular-badge {
+    position: absolute;
+    top: 1rem; right: 1rem;
+    background: var(--accent);
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 800;
+    padding: .25rem .7rem;
+    border-radius: 20px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+/* Kart header */
+.pl-card-head {
+    padding: 1.8rem 1.8rem 1.2rem;
+}
+.pl-plan-icon { font-size: 2.2rem; margin-bottom: .6rem; display: block; }
+.pl-plan-name {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0 0 .25rem;
+}
+.pl-plan-desc {
+    font-size: .88rem;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+/* Ayırıcı */
+.pl-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0 1.8rem;
+}
+
+/* Özellik listesi */
+.pl-features {
+    padding: 1.4rem 1.8rem;
+    list-style: none;
+    margin: 0;
+}
+.pl-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: .6rem;
+    padding: .45rem 0;
+    font-size: .9rem;
+    color: var(--text);
+    line-height: 1.4;
+}
+.pl-feature-icon { flex-shrink: 0; margin-top: .05rem; }
+.pl-feature-icon.yes { color: #10b981; }
+.pl-feature-icon.no  { color: var(--muted); }
+.pl-feature.disabled { color: var(--muted); }
+
+/* Kart footer */
+.pl-card-foot {
+    padding: 1.2rem 1.8rem 1.8rem;
+}
+.pl-btn {
+    display: block;
+    width: 100%;
+    padding: .9rem;
+    border-radius: 9px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: .95rem;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: all .2s;
+    border: 2px solid var(--border);
+    background: transparent;
+    color: var(--text);
+}
+.pl-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(220,38,38,.04); }
+.pl-btn.primary {
+    background: linear-gradient(135deg, var(--accent) 0%, #f97316 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(220,38,38,.3);
+}
+.pl-btn.primary:hover { filter: brightness(1.07); color: #fff; border-color: transparent; }
+.pl-btn.active-plan {
+    background: rgba(16,185,129,.1);
+    border-color: #10b981;
+    color: #059669;
+    cursor: default;
+}
+.pl-btn.active-plan:hover { border-color: #10b981; color: #059669; background: rgba(16,185,129,.1); }
+
+/* Karşılaştırma tablosu */
+.pl-compare {
+    margin-top: 4rem;
+}
+.pl-compare h2 {
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+}
+.pl-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    font-size: .9rem;
+}
+.pl-table th {
+    background: var(--input-bg);
+    padding: .9rem 1.2rem;
+    text-align: center;
+    font-weight: 700;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+}
+.pl-table th:first-child { text-align: left; }
+.pl-table td {
+    padding: .8rem 1.2rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+.pl-table td:first-child { text-align: left; font-weight: 500; }
+.pl-table tbody tr:last-child td { border-bottom: none; }
+.pl-table tbody tr:hover { background: var(--input-bg); }
+.pl-check { color: #10b981; font-size: 1.1rem; }
+.pl-cross { color: var(--muted); }
+</style>
+
+<div class="pl-wrap">
+
+    <!-- Hero -->
+    <div class="pl-hero">
+        <h1>Üyelik Planları</h1>
+        <p>İhtiyaçlarınıza en uygun planı seçin. Dosya dönüştürme ve paylaşım özelliklerinden tam anlamıyla yararlanın.</p>
+    </div>
+
+
+    <!-- Plan Kartları -->
+    <div class="pl-grid">
+
+        <!-- NORMAL -->
+        <div class="pl-card {% if kullanici_plan == 'normal' %}mevcut-plan{% endif %}">
+            {% if kullanici_plan == 'normal' %}<div class="pl-current-badge">✓ Mevcut Planınız</div>{% endif %}
+            <div class="pl-card-head">
+                <span class="pl-plan-icon">👤</span>
+                <div class="pl-plan-name">Normal</div>
+                <div class="pl-plan-desc">Temel dosya paylaşım ve dönüştürme özellikleri. Başlamak için mükemmel.</div>
+            </div>
+            <div class="pl-divider"></div>
+            <ul class="pl-features">
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> Dosya paylaşım linki oluşturma</li>
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> 1 ve 3 günlük saklama süresi</li>
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> Şifre koruması</li>
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> 10 MB dosya dönüştürme limiti</li>
+                <li class="pl-feature disabled"><span class="pl-feature-icon no">✗</span> 7+ günlük saklama</li>
+                <li class="pl-feature disabled"><span class="pl-feature-icon no">✗</span> E-posta ile iletim</li>
+                <li class="pl-feature disabled"><span class="pl-feature-icon no">✗</span> Sonsuz saklama</li>
+            </ul>
+            <div class="pl-card-foot">
+                {% if kullanici_plan == 'normal' %}
+                <span class="pl-btn active-plan">✓ Aktif Plan</span>
+                {% else %}
+                <a href="{{ url_for('kayit') }}" class="pl-btn">Ücretsiz Başla</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- PREMIUM -->
+        <div class="pl-card featured {% if kullanici_plan == 'premium' %}mevcut-plan{% endif %}">
+            {% if kullanici_plan == 'premium' %}
+            <div class="pl-current-badge">✓ Mevcut Planınız</div>
+            {% elif kullanici_plan != 'pro' %}
+            <div class="pl-popular-badge">⭐ Popüler</div>
+            {% endif %}
+            <div class="pl-card-head">
+                <span class="pl-plan-icon">⭐</span>
+                <div class="pl-plan-name">Premium</div>
+                <div class="pl-plan-desc">Uzun süreli saklama ve e-posta iletimi. Profesyonel kullanıcılar için.</div>
+            </div>
+            <div class="pl-divider"></div>
+            <ul class="pl-features">
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> Normal plan her şeyi içerir</li>
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> 7 ve 30 günlük saklama süresi</li>
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> E-posta ile dosya iletimi</li>
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> 100 MB dosya dönüştürme limiti</li>
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> Paylaşım link geçmişi</li>
+                <li class="pl-feature disabled"><span class="pl-feature-icon no">✗</span> 60 gün ve Sonsuz saklama</li>
+                <li class="pl-feature disabled"><span class="pl-feature-icon no">✗</span> Öncelikli destek</li>
+            </ul>
+            <div class="pl-card-foot">
+                {% if kullanici_plan == 'premium' %}
+                <span class="pl-btn active-plan">✓ Aktif Plan</span>
+                {% else %}
+                <a href="{{ url_for('iletisim') }}" class="pl-btn primary">Premium'a Geç</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- PRO -->
+        <div class="pl-card {% if kullanici_plan == 'pro' %}mevcut-plan{% endif %}">
+            {% if kullanici_plan == 'pro' %}<div class="pl-current-badge">✓ Mevcut Planınız</div>{% endif %}
+            <div class="pl-card-head">
+                <span class="pl-plan-icon">🚀</span>
+                <div class="pl-plan-name">Pro</div>
+                <div class="pl-plan-desc">Sınırsız saklama ve öncelikli destek. Kurumsal kullanıma özel.</div>
+            </div>
+            <div class="pl-divider"></div>
+            <ul class="pl-features">
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> Premium plan her şeyi içerir</li>
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> 60 günlük saklama süresi</li>
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> Sonsuz saklama seçeneği</li>
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> Sınırsız dosya dönüştürme</li>
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> Öncelikli destek</li>
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> Toplu dosya işleme</li>
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> Gelişmiş istatistikler</li>
+                <li class="pl-feature"><span class="pl-feature-icon yes">✓</span> 🛡️ VirusTotal ile gerçek zamanlı virüs taraşı</li>
+            </ul>
+            <div class="pl-card-foot">
+                {% if kullanici_plan == 'pro' %}
+                <span class="pl-btn active-plan">✓ Aktif Plan</span>
+                {% else %}
+                <a href="{{ url_for('iletisim') }}" class="pl-btn">Pro'ya Geç</a>
+                {% endif %}
+            </div>
+        </div>
+
+    </div><!-- /pl-grid -->
+
+    <!-- Karşılaştırma Tablosu -->
+    <div class="pl-compare">
+        <h2>Detaylı Karşılaştırma</h2>
+        <table class="pl-table">
+            <thead>
+                <tr>
+                    <th>Özellik</th>
+                    <th>👤 Normal</th>
+                    <th>⭐ Premium</th>
+                    <th>🚀 Pro</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Paylaşım Linki</td><td class="pl-check">✓</td><td class="pl-check">✓</td><td class="pl-check">✓</td></tr>
+                <tr><td>Şifre Koruması</td><td class="pl-check">✓</td><td class="pl-check">✓</td><td class="pl-check">✓</td></tr>
+                <tr><td>1–3 Günlük Saklama</td><td class="pl-check">✓</td><td class="pl-check">✓</td><td class="pl-check">✓</td></tr>
+                <tr><td>7–30 Günlük Saklama</td><td class="pl-cross">✗</td><td class="pl-check">✓</td><td class="pl-check">✓</td></tr>
+                <tr><td>60 Gün Saklama</td><td class="pl-cross">✗</td><td class="pl-cross">✗</td><td class="pl-check">✓</td></tr>
+                <tr><td>Sonsuz Saklama</td><td class="pl-cross">✗</td><td class="pl-cross">✗</td><td class="pl-check">✓</td></tr>
+                <tr><td>E-posta İletimi</td><td class="pl-cross">✗</td><td class="pl-check">✓</td><td class="pl-check">✓</td></tr>
+                <tr><td>Dosya Limiti</td><td>10 MB</td><td>100 MB</td><td>Sınırsız</td></tr>
+                <tr><td>Öncelikli Destek</td><td class="pl-cross">✗</td><td class="pl-cross">✗</td><td class="pl-check">✓</td></tr>
+                <tr><td>🛡️ VirusTotal Taraşası</td><td class="pl-cross">✗</td><td class="pl-cross">✗</td><td class="pl-check">✓</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}
