@@ -38,7 +38,7 @@ app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
 # MySQL bağlantı yapılandırması
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
     'MYSQL_URL', 
-    'mysql+pymysql://kullanici:sifre@localhost/veritabani_adi'
+    'mysql+pymysql://root:sooioSqVWrMJjwFTFSqdLFSmvuauinRn@mysql.railway.internal/railway'
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
